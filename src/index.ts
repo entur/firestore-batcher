@@ -8,12 +8,15 @@ enum OperationName {
 }
 
 interface CreateOperation<T> {
-    name: OperationName.CREATE,
-    documentRef: firestore.DocumentReference<T>,
-    data: T,
+    name: OperationName.CREATE
+    documentRef: firestore.DocumentReference<T>
+    data: T
 }
 
-export function createOperation<T>(documentRef: firestore.DocumentReference<T>, data: T): CreateOperation<T>  {
+export function createOperation<T>(
+    documentRef: firestore.DocumentReference<T>,
+    data: T,
+): CreateOperation<T> {
     return {
         name: OperationName.CREATE,
         documentRef,
@@ -22,12 +25,15 @@ export function createOperation<T>(documentRef: firestore.DocumentReference<T>, 
 }
 
 interface DeleteOperation<T> {
-    name: OperationName.DELETE,
-    documentRef: firestore.DocumentReference<T>,
+    name: OperationName.DELETE
+    documentRef: firestore.DocumentReference<T>
     precondition?: FirebaseFirestore.Precondition
 }
 
-export function deleteOperation<T>(documentRef: firestore.DocumentReference<T>, precondition?: FirebaseFirestore.Precondition): DeleteOperation<T>  {
+export function deleteOperation<T>(
+    documentRef: firestore.DocumentReference<T>,
+    precondition?: FirebaseFirestore.Precondition,
+): DeleteOperation<T> {
     return {
         name: OperationName.DELETE,
         documentRef,
@@ -36,12 +42,15 @@ export function deleteOperation<T>(documentRef: firestore.DocumentReference<T>, 
 }
 
 interface SetOperation<T extends FirebaseFirestore.UpdateData> {
-    name: OperationName.SET,
-    documentRef: firestore.DocumentReference<T>,
-    data: T,
+    name: OperationName.SET
+    documentRef: firestore.DocumentReference<T>
+    data: T
 }
 
-export function setOperation<T>(documentRef: firestore.DocumentReference<T>, data: T): SetOperation<T>  {
+export function setOperation<T>(
+    documentRef: firestore.DocumentReference<T>,
+    data: T,
+): SetOperation<T> {
     return {
         name: OperationName.SET,
         documentRef,
@@ -50,13 +59,17 @@ export function setOperation<T>(documentRef: firestore.DocumentReference<T>, dat
 }
 
 interface UpdateOperation<T> {
-    name: OperationName.UPDATE,
-    documentRef: firestore.DocumentReference<T>,
-    data: FirebaseFirestore.UpdateData,
+    name: OperationName.UPDATE
+    documentRef: firestore.DocumentReference<T>
+    data: FirebaseFirestore.UpdateData
     precondition?: FirebaseFirestore.Precondition
 }
 
-export function updateOperation<T>(documentRef: firestore.DocumentReference<T>, data: T, precondition?: FirebaseFirestore.Precondition): UpdateOperation<T>  {
+export function updateOperation<T>(
+    documentRef: firestore.DocumentReference<T>,
+    data: T,
+    precondition?: FirebaseFirestore.Precondition,
+): UpdateOperation<T> {
     return {
         name: OperationName.UPDATE,
         documentRef,
@@ -65,34 +78,48 @@ export function updateOperation<T>(documentRef: firestore.DocumentReference<T>, 
     }
 }
 
-type Operation<T> = CreateOperation<T> | DeleteOperation<T> | SetOperation<T> | UpdateOperation<T>
+type Operation<T> =
+    | CreateOperation<T>
+    | DeleteOperation<T>
+    | SetOperation<T>
+    | UpdateOperation<T>
 
 interface Batcher {
     add: <T>(operation: Operation<T>) => void
-    all: (query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData>, operationBuilder: <T>(doc: firestore.DocumentReference<T>) => Operation<T>) => Promise<void>
+    all: (
+        query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData>,
+        operationBuilder: <T>(
+            doc: firestore.DocumentReference<T>,
+        ) => Operation<T>,
+    ) => Promise<void>
     commit: () => Promise<void>
 }
 
-function addOperationToBatch<T>(batch: firestore.WriteBatch, operation: Operation<T>): void {
+function addOperationToBatch<T>(
+    batch: firestore.WriteBatch,
+    operation: Operation<T>,
+): void {
     const { documentRef } = operation
     switch (operation.name) {
         case OperationName.CREATE:
             batch.create(documentRef, operation.data)
-            break;
+            break
         case OperationName.DELETE:
             batch.delete(documentRef, operation.precondition)
-            break;
+            break
         case OperationName.SET:
             batch.set(documentRef, (operation as SetOperation<T>).data)
-            break;
+            break
         case OperationName.UPDATE:
             batch.update(documentRef, operation.data, operation.precondition)
-            break;
+            break
     }
 }
 
 function safeRecursiveAsyncCallback<T>(callback: () => Promise<T>): Promise<T> {
-    return new Promise((resolve, reject) => process.nextTick(() => callback().then(resolve).catch(reject)))
+    return new Promise((resolve, reject) =>
+        process.nextTick(() => callback().then(resolve).catch(reject)),
+    )
 }
 
 export default function batcher(db: firestore.Firestore): Batcher {
@@ -122,7 +149,9 @@ export default function batcher(db: firestore.Firestore): Batcher {
             batchSize = Math.min(batchSize * 1.5, 500)
             numberOfOperationsProcessed += operations.length
 
-            console.log(`Batch committed. Batch size: ${batchSize}. Total processed: ${numberOfOperationsProcessed}`)
+            console.log(
+                `Batch committed. Batch size: ${batchSize}. Total processed: ${numberOfOperationsProcessed}`,
+            )
 
             numberOfOperationsCurrentBatch = 0
             operations = operations.slice(batchSize)
@@ -139,7 +168,12 @@ export default function batcher(db: firestore.Firestore): Batcher {
         }
     }
 
-    const all = async (query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData>, operationBuilder: <T>(doc: firestore.DocumentReference<T>) => Operation<T>): Promise<void> => {
+    const all = async (
+        query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData>,
+        operationBuilder: <T>(
+            doc: firestore.DocumentReference<T>,
+        ) => Operation<T>,
+    ): Promise<void> => {
         const limitedQuery = query.limit(batchSize)
         const result = await limitedQuery.get()
 
@@ -147,7 +181,7 @@ export default function batcher(db: firestore.Firestore): Batcher {
             return
         }
 
-        result.docs.forEach(doc => add(operationBuilder(doc.ref)))
+        result.docs.forEach((doc) => add(operationBuilder(doc.ref)))
         await commit()
         await safeRecursiveAsyncCallback(() => all(query, operationBuilder))
     }
