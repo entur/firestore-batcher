@@ -6,8 +6,8 @@
   "types": "./lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "format": "prettier src --write",
-    "test": "prettier src --check"
+    "format": "prettier src *.md --write",
+    "test": "prettier src *.md --check"
   },
   "files": [
     "lib"

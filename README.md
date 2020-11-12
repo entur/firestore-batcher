@@ -20,7 +20,7 @@ async function bulkDelete() {
         .collection('todos')
         .where('finished', '==', true)
 
-    await batcher.all(finishedTodosQuery, todoRef => deleteOperation(todoRef))
+    await batcher.all(finishedTodosQuery, (todoRef) => deleteOperation(todoRef))
 }
 
 bulkDelete()
@@ -31,8 +31,9 @@ bulkDelete()
 Using _batches_ is the recommended way of performing Firestore write operations in bulk, like [deleting a collection](https://firebase.google.com/docs/firestore/manage-data/delete-data#collections).
 
 There are some considerations you need to make when using `batch`, that this library will handle you:
-* A batch has an upper limit of 500 operations. If you need more operations, you need to make more batches
-* Even if you stick to less than 500 ops, the batch might fail due to "Transaction too big", depending of the size of the data.
+
+-   A batch has an upper limit of 500 operations. If you need more operations, you need to make more batches
+-   Even if you stick to less than 500 ops, the batch might fail due to "Transaction too big", depending of the size of the data.
 
 This tool will run batches recursively on your operations. The batch size is changed dynamically to handle "Transaction too big" errors.
 
@@ -55,11 +56,13 @@ const batcher = firestoreBatcher(db)
 An object with various methods:
 
 #### `add` function
+
 `<T>(operation: Operation<T>) => void`
 
 Adds an operation on a single document to the batch queue. Make sure you call `batcher.commit()` at least once after using this.
 
 Example
+
 ```typescript
 const lotr = db.collection('books').doc('lord-of-the-rings')
 const batcher.add(updateOperation(lotr, { read: true }))
@@ -69,17 +72,17 @@ await batcher.commit()
 ```
 
 #### `all` function
+
 `(query: FirebaseFirestore.Query<DocumentData>, operationBuilder: <T>(doc: DocumentReference<T>) => Operation<T>) => Promise<void>`
 
 This function takes a query and a callback. The query will be limited according to `batchSize`, and fetched and committed recursively.
 
 Example:
-```typescript
-const finishedTodosQuery = db
-    .collection('todos')
-    .where('finished', '==', true)
 
-await batcher.all(finishedTodosQuery, todoRef => deleteOperation(todoRef))
+```typescript
+const finishedTodosQuery = db.collection('todos').where('finished', '==', true)
+
+await batcher.all(finishedTodosQuery, (todoRef) => deleteOperation(todoRef))
 ```
 
 If we imagine there are 1337 finished todos, the above code will first fetch 500, delete them, fetch 500 more, delete them, fetch 337 and delete them.
@@ -87,10 +90,10 @@ If we imagine there are 1337 finished todos, the above code will first fetch 500
 This method will commit each batch, so there is no need to call `batcher.commit()` yourself.
 
 #### `commit` function
+
 `() => Promise<void>`
 
 Commits all queued operations recursively, using multiple batches if necessary.
-
 
 ### Operations
 
@@ -103,25 +106,33 @@ An _operation_ is an object that represents a batch write operation (create, set
 Four helper methods are exported to create these operation objects:
 
 #### createOperation
+
 ```
 <T>(documentRef: firestore.DocumentReference<T>, data: T) => CreateOperation<T>
 ```
+
 Creates a new document.
 
 #### deleteOperation
+
 ```
 <T>(documentRef: firestore.DocumentReference<T>, precondition?: FirebaseFirestore.Precondition) => DeleteOperation<T>
 ```
+
 Deletes a document.
 
 #### setOperation
+
 ```
 <T>(documentRef: firestore.DocumentReference<T>, data: T) => SetOperation<T>
 ```
+
 Sets the data for a document.
 
 #### updateOperation
+
 ```
 <T>(documentRef: firestore.DocumentReference<T>, data: T, precondition?: FirebaseFirestore.Precondition) => UpdateOperation<T>
 ```
+
 Updates parts of a document.
