@@ -30,10 +30,10 @@ bulkDelete()
 
 Using _batches_ is the recommended way of performing Firestore write operations in bulk, like [deleting a collection](https://firebase.google.com/docs/firestore/manage-data/delete-data#collections).
 
-There are some considerations you need to make when using `batch`, that this library will handle you:
+There are some considerations you need to make when using `batch`, that this library will handle for you:
 
--   A batch has an upper limit of 500 operations. If you need more operations, you need to make more batches
--   Even if you stick to less than 500 ops, the batch might fail due to "Transaction too big", depending of the size of the data.
+-   A batch has an upper limit of 500 operations. If you need more operations, you need to make more batches.
+-   Even if you stick to less than 500 ops/batch, a batch might fail due to "Transaction is too big", depending of the size of the data.
 
 This tool will run batches recursively on your operations. The batch size is changed dynamically to handle "Transaction too big" errors.
 
