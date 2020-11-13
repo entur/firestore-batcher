@@ -8,12 +8,12 @@ npm install firestore-batcher
 
 ```typescript
 import * as firebase from 'firestore-admin'
-import firestoreBatcher, { deleteOperation } from 'firestore-batcher'
+import createBatcher, { deleteOperation } from 'firestore-batcher'
 
 const app = firebase.initializeApp()
 const db = firebase.firestore()
 
-const batcher = firestoreBatcher(db)
+const batcher = createBatcher(db)
 
 async function bulkDelete() {
     const finishedTodosQuery = db
@@ -39,17 +39,44 @@ This tool will run batches recursively on your operations. The batch size is cha
 
 ## API
 
-The default export is a function that takes a `firestore` instance and returns a `Batcher` instance.
+The default export is a function that takes a `firestore` instance, and perhaps some options, and returns a `Batcher` instance.
+
+### `createBatcher` function
+
+```
+(db, options?) => Batcher
+```
 
 ```typescript
 import * as firebase from 'firestore-admin'
-import firestoreBatcher, { deleteOperation } from 'firestore-batcher'
+import createBatcher, { deleteOperation } from 'firestore-batcher'
 
 const app = firebase.initializeApp()
 const db = firebase.firestore()
 
-const batcher = firestoreBatcher(db)
+const options = {
+    onBatchCommitted: (stats) =>
+        console.log(
+            `Committed a batch. Total ops processed: ${stats.numberOfOperationsProcessed}.`,
+        ),
+}
+
+const batcher = createBatcher(db)
 ```
+
+#### `db` (`firestore.Firestore`)
+
+An instance of Firestore.
+
+#### `BatcherOptions` object
+
+Optional. An object of optional options for the batcher.
+
+##### `onBatchCommitted`
+
+`(stats: BatcherStats) => void`
+
+A callback function that is called every time a batch is committed. Is called with the current stats.
 
 ### Batcher
 
@@ -95,6 +122,14 @@ This method will commit each batch, so there is no need to call `batcher.commit(
 
 Commits all queued operations recursively, using multiple batches if necessary.
 
+#### `stats` function
+
+```
+() => BatcherStats
+```
+
+Returns the current stats.
+
 ### Operations
 
 ```
@@ -136,3 +171,12 @@ Sets the data for a document.
 ```
 
 Updates parts of a document.
+
+### BatcherStats
+
+```
+{
+    batchSize: number,
+    numberOfOperationsProcessed: number,
+}
+```

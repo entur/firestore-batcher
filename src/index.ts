@@ -84,6 +84,15 @@ type Operation<T> =
     | SetOperation<T>
     | UpdateOperation<T>
 
+interface BatcherStats {
+    batchSize: number
+    numberOfOperationsProcessed: number
+}
+
+interface BatcherOptions {
+    onBatchCommited?: (stats: BatcherStats) => void
+}
+
 interface Batcher {
     add: <T>(operation: Operation<T>) => void
     all: (
@@ -93,6 +102,7 @@ interface Batcher {
         ) => Operation<T>,
     ) => Promise<void>
     commit: () => Promise<void>
+    stats: () => BatcherStats
 }
 
 function addOperationToBatch<T>(
@@ -122,13 +132,20 @@ function safeRecursiveAsyncCallback<T>(callback: () => Promise<T>): Promise<T> {
     )
 }
 
-export default function batcher(db: firestore.Firestore): Batcher {
+export default function batcher(
+    db: firestore.Firestore,
+    options?: BatcherOptions,
+): Batcher {
     let batch = db.batch()
-    let numberOfOperationsCurrentBatch = 0
     let numberOfOperationsProcessed = 0
     let batchSize = 500
 
     let operations: Operation<any>[] = []
+
+    const stats = () => ({
+        batchSize,
+        numberOfOperationsProcessed,
+    })
 
     const add = <T>(operation: Operation<T>): void => {
         operations.push(operation)
@@ -136,7 +153,6 @@ export default function batcher(db: firestore.Firestore): Batcher {
 
     const commit = async (): Promise<void> => {
         try {
-            // recursion base case
             if (!operations.length) {
                 return
             }
@@ -149,11 +165,10 @@ export default function batcher(db: firestore.Firestore): Batcher {
             batchSize = Math.min(batchSize * 1.5, 500)
             numberOfOperationsProcessed += operations.length
 
-            console.log(
-                `Batch committed. Batch size: ${batchSize}. Total processed: ${numberOfOperationsProcessed}`,
-            )
+            if (options?.onBatchCommited) {
+                options.onBatchCommited(stats())
+            }
 
-            numberOfOperationsCurrentBatch = 0
             operations = operations.slice(batchSize)
             batch = db.batch()
             await safeRecursiveAsyncCallback(commit)
@@ -161,7 +176,6 @@ export default function batcher(db: firestore.Firestore): Batcher {
             // Reduce batch size if error "Transaction too big"
             if (error.code === 3) {
                 batchSize = Math.floor(batchSize / 2)
-                console.log('Decreasing batch size to', batchSize)
                 return safeRecursiveAsyncCallback(commit)
             }
             throw error
@@ -190,5 +204,6 @@ export default function batcher(db: firestore.Firestore): Batcher {
         add,
         all,
         commit,
+        stats,
     }
 }
