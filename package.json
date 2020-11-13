@@ -6,6 +6,7 @@
   "types": "./lib/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "prepublish": "npm run build",
     "prettier": "prettier src *.md .github",
     "format": "npm run prettier -- --write",
     "test": "npm run prettier -- --check"
