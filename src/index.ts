@@ -118,11 +118,20 @@ function addOperationToBatch<T>(
             batch.delete(documentRef, operation.precondition)
             break
         case OperationName.SET:
-            batch.set(documentRef, (operation as SetOperation<T>).data)
+            batch.set(documentRef, operation.data)
             break
-        case OperationName.UPDATE:
-            batch.update(documentRef, operation.data, operation.precondition)
+        case OperationName.UPDATE: {
+            if (operation.precondition) {
+                batch.update(
+                    documentRef,
+                    operation.data,
+                    operation.precondition,
+                )
+            } else {
+                batch.update(documentRef, operation.data)
+            }
             break
+        }
     }
 }
 
