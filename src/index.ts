@@ -166,19 +166,21 @@ export default function batcher(
                 return
             }
 
-            operations.slice(0, batchSize).forEach((operation) => {
+            const opsToCommit = operations.slice(0, batchSize)
+
+            opsToCommit.forEach((operation) => {
                 addOperationToBatch(batch, operation)
             })
 
             await batch.commit()
             batchSize = Math.min(batchSize * 1.5, 500)
-            numberOfOperationsProcessed += operations.length
+            numberOfOperationsProcessed += opsToCommit.length
 
             if (options?.onBatchCommited) {
                 options.onBatchCommited(stats())
             }
 
-            operations = operations.slice(batchSize)
+            operations = operations.slice(opsToCommit.length)
             batch = db.batch()
             await safeRecursiveAsyncCallback(commit)
         } catch (error) {
