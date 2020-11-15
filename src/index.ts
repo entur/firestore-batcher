@@ -87,6 +87,7 @@ type Operation<T> =
 interface BatcherStats {
     batchSize: number
     numberOfOperationsProcessed: number
+    numberOfOperationsQueued: number
 }
 
 interface BatcherOptions {
@@ -154,6 +155,7 @@ export default function batcher(
     const stats = () => ({
         batchSize,
         numberOfOperationsProcessed,
+        numberOfOperationsQueued: operations.length,
     })
 
     const add = <T>(operation: Operation<T>): void => {

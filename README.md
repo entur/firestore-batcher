@@ -178,5 +178,6 @@ Updates parts of a document.
 {
     batchSize: number,
     numberOfOperationsProcessed: number,
+    numberOfOperationsQueued: number,
 }
 ```
