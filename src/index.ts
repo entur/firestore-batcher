@@ -175,19 +175,19 @@ export default function batcher(
             })
 
             await batch.commit()
-            batchSize = Math.min(batchSize * 1.5, 500)
             numberOfOperationsProcessed += opsToCommit.length
+            operations = operations.slice(opsToCommit.length)
 
             if (options?.onBatchCommited) {
                 options.onBatchCommited(stats())
             }
 
-            operations = operations.slice(opsToCommit.length)
+            batchSize = Math.min(batchSize * 1.5, 500)
             batch = db.batch()
             await safeRecursiveAsyncCallback(commit)
         } catch (error) {
             // Reduce batch size if error "Transaction too big"
-            if (error.code === 3) {
+            if (error.code === 3 && error.details?.includes('too big')) {
                 batchSize = Math.floor(batchSize / 2)
                 return safeRecursiveAsyncCallback(commit)
             }
