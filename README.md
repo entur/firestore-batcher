@@ -37,6 +37,17 @@ There are some considerations you need to make when using `batch`, that this lib
 
 This tool will run batches recursively on your operations. The batch size is changed dynamically to handle "Transaction too big" errors.
 
+In the following example we see that a "Transaction too big" error occurred, and the batch size was halved to 250. After that, the batch size was gradually restored to its former glory by a factor of 1.5.
+
+```
+Batch committed. Batch size: 500. Processed: 15013. Queued: 0. Progress: 1
+Batch committed. Batch size: 500. Processed: 15513. Queued: 0. Progress: 1
+Batch committed. Batch size: 250. Processed: 15763. Queued: 250. Progress: 0.9843876850059327
+Batch committed. Batch size: 375. Processed: 16013. Queued: 0. Progress: 1
+Batch committed. Batch size: 500. Processed: 16513. Queued: 0. Progress: 1
+Batch committed. Batch size: 500. Processed: 17013. Queued: 0. Progress: 1
+```
+
 ## API
 
 The default export is a function that takes a `firestore` instance, and perhaps some options, and returns a `Batcher` instance.
