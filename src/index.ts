@@ -186,7 +186,11 @@ export default function batcher(
             batchSize = Math.min(Math.floor(batchSize * 1.5), 500)
             await safeRecursiveAsyncCallback(commit)
         } catch (error) {
-            if (error.code === 3 && error.details === 'Transaction too big. Decrease transaction size.') {
+            if (
+                error.code === 3 &&
+                error.details ===
+                    'Transaction too big. Decrease transaction size.'
+            ) {
                 batchSize = Math.floor(batchSize / 2)
                 return safeRecursiveAsyncCallback(commit)
             }
