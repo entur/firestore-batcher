@@ -205,15 +205,13 @@ export default function batcher(
         ) => Operation<T>,
     ): Promise<void> => {
         const limitedQuery = query.limit(batchSize)
-        const result = await limitedQuery.get()
+        let result = await limitedQuery.get()
 
-        if (result.size === 0) {
-            return
+        while (result.size > 0) {
+            result.docs.forEach((doc) => add(operationBuilder(doc.ref)))
+            await commit()
+            result = await limitedQuery.get()
         }
-
-        result.docs.forEach((doc) => add(operationBuilder(doc.ref)))
-        await commit()
-        await safeRecursiveAsyncCallback(() => all(query, operationBuilder))
     }
 
     return {
