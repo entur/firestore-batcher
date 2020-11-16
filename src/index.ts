@@ -86,8 +86,8 @@ type Operation<T> =
 
 interface BatcherStats {
     batchSize: number
-    numberOfOperationsProcessed: number
-    numberOfOperationsQueued: number
+    operationsProcessed: number
+    operationsQueued: number
 }
 
 interface BatcherOptions {
@@ -146,15 +146,15 @@ export default function batcher(
     db: firestore.Firestore,
     options?: BatcherOptions,
 ): Batcher {
-    let numberOfOperationsProcessed = 0
+    let operationsProcessed = 0
     let batchSize = 500
 
     let operations: Operation<any>[] = []
 
     const stats = () => ({
         batchSize,
-        numberOfOperationsProcessed,
-        numberOfOperationsQueued: operations.length,
+        operationsProcessed,
+        operationsQueued: operations.length,
     })
 
     const add = <T>(operation: Operation<T>): void => {
@@ -176,7 +176,7 @@ export default function batcher(
             })
 
             await batch.commit()
-            numberOfOperationsProcessed += opsToCommit.length
+            operationsProcessed += opsToCommit.length
             operations = operations.slice(opsToCommit.length)
 
             if (options?.onBatchCommited) {

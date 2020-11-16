@@ -57,7 +57,7 @@ const db = firebase.firestore()
 const options = {
     onBatchCommitted: (stats) =>
         console.log(
-            `Committed a batch. Total ops processed: ${stats.numberOfOperationsProcessed}.`,
+            `Committed a batch. Total ops processed: ${stats.operationsProcessed}.`,
         ),
 }
 
@@ -177,7 +177,7 @@ Updates parts of a document.
 ```
 {
     batchSize: number,
-    numberOfOperationsProcessed: number,
-    numberOfOperationsQueued: number,
+    operationsProcessed: number,
+    operationsQueued: number,
 }
 ```
