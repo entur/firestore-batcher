@@ -146,7 +146,6 @@ export default function batcher(
     db: firestore.Firestore,
     options?: BatcherOptions,
 ): Batcher {
-    let batch = db.batch()
     let numberOfOperationsProcessed = 0
     let batchSize = 500
 
@@ -168,6 +167,8 @@ export default function batcher(
                 return
             }
 
+            const batch = db.batch()
+
             const opsToCommit = operations.slice(0, batchSize)
 
             opsToCommit.forEach((operation) => {
@@ -182,12 +183,10 @@ export default function batcher(
                 options.onBatchCommited(stats())
             }
 
-            batchSize = Math.min(batchSize * 1.5, 500)
-            batch = db.batch()
+            batchSize = Math.min(Math.floor(batchSize * 1.5), 500)
             await safeRecursiveAsyncCallback(commit)
         } catch (error) {
-            // Reduce batch size if error "Transaction too big"
-            if (error.code === 3 && error.details?.includes('too big')) {
+            if (error.code === 3 && error.details === 'Transaction too big. Decrease transaction size.') {
                 batchSize = Math.floor(batchSize / 2)
                 return safeRecursiveAsyncCallback(commit)
             }
