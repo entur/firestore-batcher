@@ -7,11 +7,12 @@ npm install firestore-batcher
 ```
 
 ```typescript
-import * as firebase from 'firestore-admin'
+import { initializeApp } from 'firebase-admin/app'
+import { FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore'
 import createBatcher, { deleteOperation } from 'firestore-batcher'
 
-const app = firebase.initializeApp()
-const db = firebase.firestore()
+const app = initializeApp()
+const db = getFirestore()
 
 const batcher = createBatcher(db)
 

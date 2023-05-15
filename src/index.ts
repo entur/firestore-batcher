@@ -1,4 +1,10 @@
-import { firestore } from 'firebase-admin'
+import {
+    DocumentReference,
+    Firestore,
+    UpdateData,
+    WithFieldValue,
+    WriteBatch,
+} from 'firebase-admin/firestore'
 
 enum OperationName {
     CREATE = 'create',
@@ -9,12 +15,12 @@ enum OperationName {
 
 interface CreateOperation<T> {
     name: OperationName.CREATE
-    documentRef: firestore.DocumentReference<T>
+    documentRef: DocumentReference<T>
     data: T
 }
 
 export function createOperation<T>(
-    documentRef: firestore.DocumentReference<T>,
+    documentRef: DocumentReference<T>,
     data: T,
 ): CreateOperation<T> {
     return {
@@ -26,12 +32,12 @@ export function createOperation<T>(
 
 interface DeleteOperation<T> {
     name: OperationName.DELETE
-    documentRef: firestore.DocumentReference<T>
+    documentRef: DocumentReference<T>
     precondition?: FirebaseFirestore.Precondition
 }
 
 export function deleteOperation<T>(
-    documentRef: firestore.DocumentReference<T>,
+    documentRef: DocumentReference<T>,
     precondition?: FirebaseFirestore.Precondition,
 ): DeleteOperation<T> {
     return {
@@ -41,15 +47,15 @@ export function deleteOperation<T>(
     }
 }
 
-interface SetOperation<T extends FirebaseFirestore.UpdateData> {
+interface SetOperation<T> {
     name: OperationName.SET
-    documentRef: firestore.DocumentReference<T>
-    data: T
+    documentRef: DocumentReference<T>
+    data: WithFieldValue<T>
 }
 
 export function setOperation<T>(
-    documentRef: firestore.DocumentReference<T>,
-    data: T,
+    documentRef: DocumentReference<T>,
+    data: WithFieldValue<T>,
 ): SetOperation<T> {
     return {
         name: OperationName.SET,
@@ -60,14 +66,14 @@ export function setOperation<T>(
 
 interface UpdateOperation<T> {
     name: OperationName.UPDATE
-    documentRef: firestore.DocumentReference<T>
-    data: FirebaseFirestore.UpdateData
+    documentRef: DocumentReference<T>
+    data: UpdateData<T>
     precondition?: FirebaseFirestore.Precondition
 }
 
 export function updateOperation<T>(
-    documentRef: firestore.DocumentReference<T>,
-    data: T,
+    documentRef: DocumentReference<T>,
+    data: UpdateData<T>,
     precondition?: FirebaseFirestore.Precondition,
 ): UpdateOperation<T> {
     return {
@@ -98,16 +104,14 @@ interface Batcher {
     add: <T>(operation: Operation<T>) => void
     all: (
         query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData>,
-        operationBuilder: <T>(
-            doc: firestore.DocumentReference<T>,
-        ) => Operation<T>,
+        operationBuilder: <T>(doc: DocumentReference<T>) => Operation<T>,
     ) => Promise<void>
     commit: () => Promise<void>
     stats: () => BatcherStats
 }
 
 function addOperationToBatch<T>(
-    batch: firestore.WriteBatch,
+    batch: WriteBatch,
     operation: Operation<T>,
 ): void {
     const { documentRef } = operation
@@ -143,7 +147,7 @@ function safeRecursiveAsyncCallback<T>(callback: () => Promise<T>): Promise<T> {
 }
 
 export default function batcher(
-    db: firestore.Firestore,
+    db: Firestore,
     options?: BatcherOptions,
 ): Batcher {
     let operationsProcessed = 0
@@ -185,7 +189,7 @@ export default function batcher(
 
             batchSize = Math.min(Math.floor(batchSize * 1.5), 500)
             await safeRecursiveAsyncCallback(commit)
-        } catch (error) {
+        } catch (error: any) {
             if (
                 error.code === 3 &&
                 error.details ===
@@ -200,9 +204,7 @@ export default function batcher(
 
     const all = async (
         query: FirebaseFirestore.Query<FirebaseFirestore.DocumentData>,
-        operationBuilder: <T>(
-            doc: firestore.DocumentReference<T>,
-        ) => Operation<T>,
+        operationBuilder: <T>(doc: DocumentReference<T>) => Operation<T>,
     ): Promise<void> => {
         const limitedQuery = query.limit(batchSize)
         let result = await limitedQuery.get()
