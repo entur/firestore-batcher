@@ -1,6 +1,6 @@
 {
   "name": "firestore-batcher",
-  "version": "0.4.1",
+  "version": "1.0.0",
   "description": "Batching Firestore operations without the hassle",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -16,7 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/entur/firebase-batcher.git"
+    "url": "git+https://github.com/entur/firestore-batcher.git"
   },
   "keywords": [
     "firebase",
@@ -27,9 +27,9 @@
   "author": "Entur AS",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/entur/firebase-batcher/issues"
+    "url": "https://github.com/entur/firestore-batcher/issues"
   },
-  "homepage": "https://github.com/entur/firebase-batcher#readme",
+  "homepage": "https://github.com/entur/firestore-batcher#readme",
   "devDependencies": {
     "firebase-admin": "^11.2.1",
     "prettier": "^2.1.2",
