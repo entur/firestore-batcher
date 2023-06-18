@@ -4,6 +4,7 @@ import {
     UpdateData,
     WithFieldValue,
     WriteBatch,
+    SetOptions,
 } from 'firebase-admin/firestore'
 
 enum OperationName {
@@ -51,16 +52,19 @@ interface SetOperation<T> {
     name: OperationName.SET
     documentRef: DocumentReference<T>
     data: WithFieldValue<T>
+    setOptions: SetOptions
 }
 
 export function setOperation<T>(
     documentRef: DocumentReference<T>,
     data: WithFieldValue<T>,
+    setOptions: SetOptions = {},
 ): SetOperation<T> {
     return {
         name: OperationName.SET,
         documentRef,
         data,
+        setOptions,
     }
 }
 
@@ -123,7 +127,7 @@ function addOperationToBatch<T>(
             batch.delete(documentRef, operation.precondition)
             break
         case OperationName.SET:
-            batch.set(documentRef, operation.data)
+            batch.set(documentRef, operation.data, operation.setOptions)
             break
         case OperationName.UPDATE: {
             if (operation.precondition) {
